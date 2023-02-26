@@ -70,7 +70,7 @@ export default {
     return AxiosConfig.post(`/${baseEndpoint}`, payload)
       .then((response) => {
         if (response.data.id) {
-          vm.$router.push(`/product/form/${response.data.id}`)
+          vm.$router.push('/productos')
 
           vm.$root.$emit('showToastMessage', {
             type: 'success',
