@@ -64,12 +64,34 @@
       <!-- https://github.com/vuetifyjs/vuetify/pull/8574 -->
       <div />
     </v-list>
+    <template #append>
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title>
+            {{ getUserFullName }}
+            <br>
+            Rol de usuario: {{ user.role }}
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+      <v-list-item @click="handleLogout">
+        <v-list-item-icon>
+          <v-icon>mdi-logout</v-icon>
+        </v-list-item-icon>
+        <v-list-item-content>
+          <v-list-item-title>
+            Cerrar Sesión
+          </v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </template>
   </v-navigation-drawer>
 </template>
 
 <script>
 // Utilities
 import {
+  mapActions, mapGetters,
   mapState
 } from 'vuex'
 
@@ -86,6 +108,11 @@ export default {
   data: () => ({
     items: [
       {
+        title: 'Ordenes',
+        icon: '🍔',
+        to: '/ordenes'
+      },
+      {
         title: 'Productos',
         icon: '🍔',
         to: '/productos'
@@ -94,10 +121,18 @@ export default {
         title: 'Inventario',
         icon: '🍔',
         to: '/inventario'
+      },
+      {
+        title: 'Pagos',
+        icon: '🍔',
+        to: '/pagos',
+        requireAdmin: true
       }
     ]
   }),
   computed: {
+    ...mapGetters('auth', ['isAdminUser', 'getUserFullName', 'isAdminUser']),
+    ...mapState('auth', ['user']),
     ...mapState(['barColor', 'barImage']),
     drawer: {
       get () {
@@ -108,7 +143,10 @@ export default {
       }
     },
     computedItems () {
-      return this.items.map(this.mapItem).filter(item => !item.requireAdmin)
+      if (!this.isAdminUser) {
+        return this.items.map(this.mapItem).filter(item => !item.requireAdmin)
+      }
+      return this.items.map(this.mapItem)
     },
     profile () {
       return {
@@ -118,11 +156,23 @@ export default {
     }
   },
   methods: {
+    ...mapActions('auth', ['logout']),
     mapItem (item) {
       return {
         ...item,
         children: item.children ? item.children.map(this.mapItem) : undefined,
         title: this.$t(item.title)
+      }
+    },
+    async handleLogout () {
+      try {
+        await this.logout()
+        await this.$router.push('/login')
+      } catch (e) {
+        this.$root.$emit('showToastMessage', {
+          type: 'error',
+          message: 'Ha ocurrido un error al cerrar sesión'
+        })
       }
     }
   }

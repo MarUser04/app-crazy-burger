@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import moduleItems from '@/store/items/moduleItems'
 import moduleProducts from '@/store/products/moduleProducts'
+import moduleOrders from '@/store/orders/moduleOrders'
+import moduleAuth from '@/store/auth/moduleAuth'
 
 Vue.use(Vuex)
 
@@ -23,6 +25,8 @@ export default new Vuex.Store({
   },
   modules: {
     items: moduleItems,
-    products: moduleProducts
+    products: moduleProducts,
+    orders: moduleOrders,
+    auth: moduleAuth
   }
 })
