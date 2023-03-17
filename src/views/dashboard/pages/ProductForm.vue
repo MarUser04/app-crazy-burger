@@ -30,6 +30,7 @@
                     class="purple-input"
                     label="Nombre del Producto"
                     :rules="stringRule"
+                    :disabled="shouldDisableForm"
                   />
                 </v-col>
 
@@ -42,6 +43,7 @@
                     label="Precio"
                     type="number"
                     :rules="numberRule"
+                    :disabled="shouldDisableForm"
                   />
                 </v-col>
                 <v-col
@@ -57,6 +59,7 @@
                         item-text="text"
                         hint="Items disponibles en el inventario"
                         persistent-hint
+                        :disabled="shouldDisableForm"
                       ></v-select>
                    </v-col>
                    <v-col cols="5">
@@ -66,6 +69,7 @@
                         label="Cantidad del Item"
                         type="number"
                         :rules="numberRule"
+                        :disabled="shouldDisableForm"
                       />
                    </v-col>
                    <v-col cols="2">
@@ -73,6 +77,7 @@
                       size="16"
                       class="ml-2 mr-1"
                       @click="deleteItem(idx)"
+                      v-if="isAdminUser"
                     >
                       mdi-delete
                     </v-icon>
@@ -84,6 +89,7 @@
                     small
                     color="success"
                     @click="addNewItem"
+                    v-if="isAdminUser"
                   >
                     Agregar más items
                   </v-btn>
@@ -104,6 +110,7 @@
                     class="mr-0"
                     @click="handleSubmitProduct"
                     :disabled="disableSubmit"
+                    v-if="isAdminUser"
                   >
                     {{ getFormTitle }}
                   </v-btn>
@@ -161,8 +168,12 @@ export default {
     ...mapState('products', ['product', 'productLoader']),
     ...mapState('items', ['items']),
     ...mapGetters('items', ['getMappedItems']),
+    ...mapGetters('auth', ['isAdminUser']),
     getFormTitle () {
-      return this.isEditForm ? 'Editar Producto' : 'Crear Producto'
+      if (this.isAdminUser) {
+        return this.isEditForm ? 'Editar Producto' : 'Crear Producto'
+      }
+      return 'Producto'
     },
     isEditForm () {
       return !!this.getFormId
@@ -175,6 +186,9 @@ export default {
         this.productForm.precio < 1 ||
         this.productForm.items.filter(item => item.id === 0 || (item.quantity < 1 || !item.quantity)).length > 0 ||
         this.productForm.items.length === 0
+    },
+    shouldDisableForm () {
+      return !this.isAdminUser
     }
   },
   methods: {

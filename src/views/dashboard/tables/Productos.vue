@@ -40,6 +40,7 @@
               dark
               class="mb-2"
               @click="openCreate"
+              v-if="isAdminUser"
             >
               Nuevo Producto
             </v-btn>
@@ -48,8 +49,8 @@
                 <v-card-title class="text-h5">¿Está seguro de que desea eliminar este elemento?</v-card-title>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text>Cancelar</v-btn>
-                  <v-btn color="blue darken-1" text>Confirmar</v-btn>
+                  <v-btn color="blue darken-1" text @click="closeDelete">Cancelar</v-btn>
+                  <v-btn color="blue darken-1" text @click="deleteProductConfirm">Confirmar</v-btn>
                   <v-spacer></v-spacer>
                 </v-card-actions>
               </v-card>
@@ -57,16 +58,19 @@
           </v-toolbar>
         </template>
 
-        <template #[`item.Editar`]>
+        <template #[`item.Editar`]="{ item }">
           <v-icon
             size="16"
             class="ml-2 mr-1"
+            @click="openEdit(item)"
           >
-            mdi-pencil
+            {{ isAdminUser ? 'mdi-pencil' : 'mdi-eye-outline' }}
           </v-icon>
           <v-icon
             size="16"
             class="ml-2 mr-1"
+            @click="handleDeleteProduct(item)"
+            v-if="isAdminUser"
           >
             mdi-delete
           </v-icon>
@@ -77,7 +81,7 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 import debounce from 'lodash.debounce'
 
 export default {
@@ -89,12 +93,16 @@ export default {
     }
   },
   computed: {
-    ...mapState('products', ['products', 'productsLoader', 'productsTotal'])
+    ...mapState('products', ['products', 'productsLoader', 'productsTotal']),
+    ...mapGetters('auth', ['isAdminUser'])
   },
   methods: {
     ...mapActions('products', ['fetchProducts']),
     openCreate () {
       this.$router.push({ path: '/productos/form' })
+    },
+    openEdit (product) {
+      this.$router.push({ path: `/product/form/${product.id}` })
     },
     ...mapActions('products', ['fetchProducts', 'deleteProduct']),
     fetchProductsWithParams (searchFromDebounce) {
@@ -117,6 +125,34 @@ export default {
       }
 
       this.fetchProducts({ vm: this, payload: params })
+    },
+    handleDeleteProduct (product) {
+      this.idProductToDelete = product.id
+      this.dialogDelete = true
+    },
+    deleteProductConfirm () {
+      if (this.idProductToDelete) {
+        this.deleteProduct({
+          vm: this,
+          payload: { id: this.idProductToDelete }
+        })
+          .then(() => {
+            if (this.currentPage === 1) {
+              this.fetchProductsWithParams()
+            } else {
+              this.currentPage = 1
+            }
+          })
+          .finally(() => {
+            this.closeDelete()
+          })
+      }
+    },
+    closeDelete () {
+      this.dialogDelete = false
+      this.$nextTick(() => {
+        this.idProductToDelete = null
+      })
     }
   },
   created () {

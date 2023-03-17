@@ -30,6 +30,7 @@
                     class="purple-input"
                     label="Nombre del Item"
                     :rules="stringRule"
+                    :disabled="shouldDisableForm"
                   />
                 </v-col>
 
@@ -75,7 +76,7 @@
 
 <script>
 
-import { mapActions, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 
 export default {
   name: 'InventarioForm',
@@ -105,6 +106,7 @@ export default {
     this.itemForm = { ...this.item }
   },
   computed: {
+    ...mapGetters('auth', ['isAdminUser']),
     ...mapState('items', ['item', 'itemLoader']),
     getFormTitle () {
       return this.isEditForm ? 'Editar Item' : 'Crear Item'
@@ -114,6 +116,9 @@ export default {
     },
     getFormId () {
       return this.$route.params.id
+    },
+    shouldDisableForm () {
+      return !this.isAdminUser
     }
   },
   methods: {

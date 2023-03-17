@@ -22,7 +22,7 @@ const routes = [
       {
         name: 'Productos Form',
         path: 'productos/form',
-        component: () => import('@/views/dashboard/pages/ProductForm'),
+        component: () => import('@/views/dashboard/tables/ProductForm'),
         meta: {
           requireAdmin: true
         }

@@ -10,13 +10,13 @@
       class="px-5 py-3"
     >
       <v-data-table
-        :loading="itemsLoader"
+        :loading="ordersLoader"
         :headers="headers"
-        :items="items"
+        :items="orders"
         class="elevation-1"
         :page.sync="currentPage"
         @page-count="pageCount = $event"
-        :server-items-length="itemsTotal"
+        :server-items-length="ordersTotal"
         :options.sync="tableOptions"
         :footer-props="{
           'items-per-page-options': [5, 10, 15, 25]
@@ -43,7 +43,7 @@
               @click="openCreate"
               v-if="isAdminUser"
             >
-              Nuevo Item
+              Nueva Orden
             </v-btn>
             <v-dialog v-model="dialogDelete" max-width="500px">
               <v-card>
@@ -59,7 +59,19 @@
           </v-toolbar>
         </template>
 
+        <template #[`item.status`]="{ item }">
+          {{ getStatus(item.status) }}
+        </template>
+
         <template #[`item.verDetalles`]="{ item }">
+          <v-icon
+            v-if="isAdminUser && getStatus(item.status) === 'Finalizada'"
+            size="16"
+            class="ml-2 mr-1"
+            @click="handlePayment(item)"
+          >
+            mdi-cash-clock
+          </v-icon>
           <v-icon
             size="16"
             class="ml-2 mr-1"
@@ -68,10 +80,10 @@
             mdi-pencil
           </v-icon>
           <v-icon
-            v-if="isAdminUser"
             size="16"
             class="ml-2 mr-1"
-            @click="handleDeleteItem(item)"
+            @click="handleDeleteOrder(item)"
+            v-if="isAdminUser"
           >
             mdi-delete
           </v-icon>
@@ -86,28 +98,70 @@ import { mapActions, mapGetters, mapState } from 'vuex'
 import debounce from 'lodash.debounce'
 
 export default {
-  name: 'InventarioView',
+  name: 'OrdenesView',
   props: {
     title: {
       type: String,
-      default: 'Inventario'
+      default: 'Ordenes'
     }
   },
   created () {
     /**
      * Calling debounce here because Each instance needs its own debounce function if they are supposed to act independently.
      */
-    this.debounceSearchItems = debounce(this.fetchItemsWithParams, 500)
+    this.debounceSearchOrders = debounce(this.fetchOrdersWithParams, 500)
+  },
+  data () {
+    return {
+      headers: [
+        {
+          text: 'Cliente',
+          align: 'start',
+          sortable: true,
+          value: 'clientName',
+          class: 'primary--text'
+        },
+        {
+          text: 'Estado',
+          align: 'start',
+          sortable: true,
+          value: 'status',
+          class: 'primary--text'
+        },
+        {
+          text: 'Ver Detalles',
+          align: 'start',
+          sortable: false,
+          class: 'primary--text',
+          value: 'verDetalles'
+        }
+      ],
+      tableOptions: {},
+      page: 1,
+      pageCount: 1,
+      itemsPerPage: 10,
+      search: '',
+      dialogDelete: false,
+      idItemToDelete: null,
+      currentPage: 1,
+      status: [
+        { text: 'Cancelada', value: -1 },
+        { text: 'En Espera', value: 0 },
+        { text: 'En Proceso', value: 1 },
+        { text: 'Finalizada', value: 2 },
+        { text: 'Entregada', value: 3 }
+      ]
+    }
   },
   methods: {
-    ...mapActions('items', ['fetchItems', 'deleteItem']),
+    ...mapActions('orders', ['fetchOrders', 'deleteOrder']),
     openCreate () {
-      this.$router.push({ path: '/inventario/form' })
+      this.$router.push({ path: '/ordenes/form' })
     },
     openEdit (item) {
-      this.$router.push({ path: `/inventario/form/${item.id}` })
+      this.$router.push({ path: `/ordenes/form/${item.id}` })
     },
-    fetchItemsWithParams (searchFromDebounce) {
+    fetchOrdersWithParams (searchFromDebounce) {
       const params = {}
       const { itemsPerPage, page, sortBy, sortDesc } = this.tableOptions
       if (itemsPerPage > 0) {
@@ -126,21 +180,21 @@ export default {
         params.search = this.search
       }
 
-      this.fetchItems({ vm: this, payload: params })
+      this.fetchOrders({ vm: this, payload: params })
     },
-    handleDeleteItem (item) {
+    handleDeleteOrder (item) {
       this.idItemToDelete = item.id
       this.dialogDelete = true
     },
     deleteItemConfirm () {
       if (this.idItemToDelete) {
-        this.deleteItem({
+        this.deleteOrder({
           vm: this,
           payload: { id: this.idItemToDelete }
         })
           .then(() => {
             if (this.currentPage === 1) {
-              this.fetchItemsWithParams()
+              this.fetchOrdersWithParams()
             } else {
               this.currentPage = 1
             }
@@ -155,59 +209,30 @@ export default {
       this.$nextTick(() => {
         this.idItemToDelete = null
       })
+    },
+    getStatus (status) {
+      return this.status.filter(option => option.value === status)[0]?.text
+    },
+    handlePayment (item) {
+      this.$router.push({ path: `/pagos/form/${item.id}` })
     }
   },
   watch: {
     tableOptions: {
       handler () {
-        this.fetchItemsWithParams()
+        this.fetchOrdersWithParams()
       },
       deep: true
     },
     search: {
       handler (search) {
-        this.debounceSearchItems(search)
+        this.debounceSearchOrders(search)
       }
     }
   },
   computed: {
-    ...mapState('items', ['items', 'itemsLoader', 'itemsTotal']),
+    ...mapState('orders', ['orders', 'ordersLoader', 'ordersTotal']),
     ...mapGetters('auth', ['isAdminUser'])
-  },
-  data () {
-    return {
-      headers: [
-        {
-          text: 'Nombre',
-          align: 'start',
-          sortable: true,
-          value: 'name',
-          class: 'primary--text'
-        },
-        {
-          text: 'Porciones',
-          align: 'start',
-          sortable: true,
-          value: 'quantity',
-          class: 'primary--text'
-        },
-        {
-          text: 'Ver Detalles',
-          align: 'start',
-          sortable: false,
-          class: 'primary--text',
-          value: 'verDetalles'
-        }
-      ],
-      tableOptions: {},
-      page: 1,
-      pageCount: 1,
-      itemsPerPage: 10,
-      search: '',
-      dialogDelete: false,
-      idItemToDelete: null,
-      currentPage: 1
-    }
   }
 }
 </script>
