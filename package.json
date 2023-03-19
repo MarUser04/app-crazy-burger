@@ -3,8 +3,8 @@
   "version": "2.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "start": "vue-cli-service serve",
+    "serve": "--max_old_space_size=4096 vue-cli-service serve ",
+    "start": "--max_old_space_size=4096 vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "dev": "vue-cli-service serve --open",
