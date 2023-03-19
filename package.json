@@ -41,5 +41,8 @@
     "vue-template-compiler": "^2.6.11",
     "vue-world-map": "^0.1.1",
     "vuetify-loader": "^1.7.0"
+  },
+  "engines": {
+    "node": "16.13.1"
   }
 }
